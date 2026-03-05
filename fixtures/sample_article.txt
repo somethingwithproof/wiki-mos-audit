@@ -1,0 +1,40 @@
+{{Short description|American mountain range in the Pacific Northwest}}
+{{Use mdy dates|date=January 2024}}
+{{Infobox mountain range
+| name            = Cascade Range
+| photo           = Cascade Range composite.jpg
+| photo_caption   = The Cascade Range viewed from the west
+| country         = United States
+| country1        = Canada
+| highest         = Mount Rainier
+| elevation_m     = 4392
+| coordinates     = {{coord|47|N|121|W|display=title}}
+}}
+
+The '''Cascade Range''' (also called the '''Cascades''') is a major mountain range of western [[North America]], extending from northern [[California]] through [[Oregon]] and [[Washington (state)|Washington]] to southern [[British Columbia]].
+
+The range includes both non-volcanic mountains and the [[High Cascades]], a younger volcanic chain that includes several of the most prominent peaks.
+
+== Geology ==
+
+The Cascades form part of the [[Pacific Ring of Fire]], the ring of volcanoes and associated mountains around the Pacific Ocean.<ref>{{cite book |last=Harris |first=Stephen L. |title=Fire Mountains of the West |publisher=Mountain Press |year=1988 |isbn=0-87842-220-X}}</ref>
+
+The range was formed primarily through [[subduction]] of the [[Juan de Fuca Plate]] beneath the [[North American Plate]].<ref>{{cite journal |last=Tilling |first=Robert I. |title=Volcanic hazards |journal=USGS Circular |volume=1073 |year=1993 |pages=1–60}}</ref>
+
+== Notable peaks ==
+
+Several peaks in the Cascades exceed 3,000 meters in elevation. [[Mount Rainier]] in Washington is the highest at 4,392 meters. [[Mount Hood]] in Oregon reaches 3,429 meters.
+
+== See also ==
+
+* [[Sierra Nevada (U.S.)|Sierra Nevada]]
+* [[Rocky Mountains]]
+
+== References ==
+
+{{reflist}}
+
+[[Category:Mountain ranges of California]]
+[[Category:Mountain ranges of Oregon]]
+[[Category:Mountain ranges of Washington (state)]]
+[[Category:Mountain ranges of British Columbia]]
