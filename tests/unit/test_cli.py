@@ -330,6 +330,27 @@ class TestRunBatch:
         result = main(['--dir', str(tmp_path), '--fix'])
         assert result == 0
 
+    def test_batch_fix_does_not_write_through_symlink_out_of_tree(self, tmp_path: Path) -> None:
+        outside = tmp_path / 'outside'
+        outside.mkdir()
+        target = outside / 'target.txt'
+        body = (
+            "{{Short description|Test}}\n"
+            "'''Escape''' is a test.\n\n"
+            "== Section ==\n"
+            + ("word " * 35)
+            + "\n<ref>https://example.com/bare</ref>\n"
+            + "\n[[Category:Test]]\n[[Category:Example]]\n"
+        )
+        target.write_text(body)
+
+        scan = tmp_path / 'scan'
+        scan.mkdir()
+        (scan / 'Escape-corrected.txt').symlink_to(target)
+
+        assert main(['--dir', str(scan), '--fix', '--offline']) == 0
+        assert target.read_text() == body, 'fix wrote through a symlink outside the scanned directory'
+
     def test_batch_quiet_suppresses_output(self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
         f = tmp_path / 'Quiet-corrected.txt'
         f.write_text(

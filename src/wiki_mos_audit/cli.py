@@ -127,6 +127,22 @@ def _audit_single(
     return report, wikitext
 
 
+def _resolved_within(path: Path, root: Path) -> Path | None:
+    """Rebuild path underneath root, or None when it does not belong there.
+
+    A symlink placed in the scanned directory otherwise lets --fix write
+    outside the tree the operator pointed at. The target is reconstructed from
+    root rather than carried over from the caller, so nothing outside root can
+    reach the write.
+    """
+    safe_root = root.resolve()
+    try:
+        relative = path.resolve().relative_to(safe_root)
+    except ValueError:
+        return None
+    return safe_root.joinpath(*relative.parts)
+
+
 def _run_batch(args: argparse.Namespace, config: AuditConfig | None = None) -> int:
     """Scan a directory of wikitext files."""
     scan_dir = Path(args.dir)
@@ -169,8 +185,15 @@ def _run_batch(args: argparse.Namespace, config: AuditConfig | None = None) -> i
         reports.append(report)
 
         if args.fix and fixed_wikitext != wikitext:
+            write_target = _resolved_within(filepath, scan_dir)
+            if write_target is None:
+                print(
+                    f'Warning: refusing to write {filepath.name} outside {args.dir}',
+                    file=sys.stderr,
+                )
+                continue
             try:
-                filepath.write_text(fixed_wikitext, encoding='utf-8')
+                write_target.write_text(fixed_wikitext, encoding='utf-8')
             except OSError as exc:
                 print(f'Warning: could not write fixes to {filepath.name}: {exc}', file=sys.stderr)
             else:
