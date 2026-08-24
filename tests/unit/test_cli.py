@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -329,6 +330,77 @@ class TestRunBatch:
         )
         result = main(['--dir', str(tmp_path), '--fix'])
         assert result == 0
+
+    def test_batch_fix_does_not_write_through_symlink_out_of_tree(self, tmp_path: Path) -> None:
+        outside = tmp_path / 'outside'
+        outside.mkdir()
+        target = outside / 'target.txt'
+        body = (
+            "{{Short description|Test}}\n"
+            "'''Escape''' is a test.\n\n"
+            "== Section ==\n"
+            + ("word " * 35)
+            + "\n<ref>https://example.com/bare</ref>\n"
+            + "\n[[Category:Test]]\n[[Category:Example]]\n"
+        )
+        target.write_text(body)
+
+        scan = tmp_path / 'scan'
+        scan.mkdir()
+        (scan / 'Escape-corrected.txt').symlink_to(target)
+
+        assert main(['--dir', str(scan), '--fix', '--offline']) == 0
+        assert target.read_text() == body, 'fix wrote through a symlink outside the scanned directory'
+
+    def test_write_within_refuses_an_escaping_leaf(self, tmp_path: Path) -> None:
+        from wiki_mos_audit.cli import _write_within
+
+        outside = tmp_path / 'outside'
+        outside.mkdir()
+        external = outside / 'target.txt'
+        external.write_text('untouched')
+
+        scan = tmp_path / 'scan'
+        scan.mkdir()
+        escaping = scan / 'Escape-corrected.txt'
+        escaping.symlink_to(external)
+
+        assert _write_within(escaping, scan, 'attacker payload') is False
+        assert external.read_text() == 'untouched'
+
+    def test_write_within_survives_a_swap_after_the_check(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Simulate the race: the leaf becomes a symlink after it is validated."""
+        from wiki_mos_audit.cli import _write_within
+
+        outside = tmp_path / 'outside'
+        outside.mkdir()
+        external = outside / 'target.txt'
+        external.write_text('untouched')
+
+        scan = tmp_path / 'scan'
+        scan.mkdir()
+        leaf = scan / 'Race-corrected.txt'
+        leaf.write_text('original')
+
+        real_resolve = Path.resolve
+        swapped = {'done': False}
+
+        def racing_resolve(self, *args, **kwargs):
+            result = real_resolve(self, *args, **kwargs)
+            if self.name == 'Race-corrected.txt' and not swapped['done']:
+                swapped['done'] = True
+                self.unlink()
+                self.symlink_to(external)
+            return result
+
+        monkeypatch.setattr(Path, 'resolve', racing_resolve)
+
+        with pytest.raises(OSError):
+            _write_within(leaf, scan, 'attacker payload')
+        assert swapped['done'] is True
+        assert external.read_text() == 'untouched'
 
     def test_batch_quiet_suppresses_output(self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
         f = tmp_path / 'Quiet-corrected.txt'
@@ -776,3 +848,49 @@ class TestBatchModeConfigPassthrough:
         # Config must have been forwarded to audit_mos
         assert len(captured_configs) >= 1
         assert 'lead-length' in captured_configs[0].disabled_checks
+
+
+def test_write_within_refuses_a_swapped_scan_root(tmp_path: Path) -> None:
+    """The scan root is opened with O_NOFOLLOW, so swapping it is refused."""
+    from wiki_mos_audit.cli import _write_within
+
+    outside = tmp_path / 'outside'
+    outside.mkdir()
+
+    real_root = tmp_path / 'real'
+    real_root.mkdir()
+    leaf = real_root / 'Article-corrected.txt'
+    leaf.write_text('original')
+
+    # A root that resolves to a directory works.
+    assert _write_within(leaf, real_root, 'fixed') is True
+    assert leaf.read_text() == 'fixed'
+
+    # A root that is itself a symlink resolves to the real directory, so the
+    # operator's symlinked scan directory keeps working.
+    linked_root = tmp_path / 'linked'
+    linked_root.symlink_to(real_root)
+    assert _write_within(linked_root / 'Article-corrected.txt', linked_root, 'again') is True
+    assert leaf.read_text() == 'again'
+
+
+def test_write_within_refuses_when_the_scan_root_becomes_a_symlink(tmp_path: Path) -> None:
+    """Swapping the resolved root for a symlink must not redirect the write."""
+    from wiki_mos_audit.cli import _write_within
+
+    real_root = tmp_path / 'real'
+    real_root.mkdir()
+    leaf = real_root / 'Article-corrected.txt'
+    leaf.write_text('original')
+
+    outside = tmp_path / 'outside'
+    outside.mkdir()
+    (outside / 'Article-corrected.txt').write_text('external')
+
+    resolved = real_root.resolve()
+    os.rename(resolved, tmp_path / 'moved')
+    resolved.symlink_to(outside)
+
+    assert _write_within(tmp_path / 'moved' / 'Article-corrected.txt', real_root, 'payload') is False
+    assert (outside / 'Article-corrected.txt').read_text() == 'external'
+    assert (tmp_path / 'moved' / 'Article-corrected.txt').read_text() == 'original'
