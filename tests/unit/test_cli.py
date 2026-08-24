@@ -351,6 +351,56 @@ class TestRunBatch:
         assert main(['--dir', str(scan), '--fix', '--offline']) == 0
         assert target.read_text() == body, 'fix wrote through a symlink outside the scanned directory'
 
+    def test_write_within_refuses_an_escaping_leaf(self, tmp_path: Path) -> None:
+        from wiki_mos_audit.cli import _write_within
+
+        outside = tmp_path / 'outside'
+        outside.mkdir()
+        external = outside / 'target.txt'
+        external.write_text('untouched')
+
+        scan = tmp_path / 'scan'
+        scan.mkdir()
+        escaping = scan / 'Escape-corrected.txt'
+        escaping.symlink_to(external)
+
+        assert _write_within(escaping, scan, 'attacker payload') is False
+        assert external.read_text() == 'untouched'
+
+    def test_write_within_survives_a_swap_after_the_check(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Simulate the race: the leaf becomes a symlink after it is validated."""
+        from wiki_mos_audit.cli import _write_within
+
+        outside = tmp_path / 'outside'
+        outside.mkdir()
+        external = outside / 'target.txt'
+        external.write_text('untouched')
+
+        scan = tmp_path / 'scan'
+        scan.mkdir()
+        leaf = scan / 'Race-corrected.txt'
+        leaf.write_text('original')
+
+        real_resolve = Path.resolve
+        swapped = {'done': False}
+
+        def racing_resolve(self, *args, **kwargs):
+            result = real_resolve(self, *args, **kwargs)
+            if self.name == 'Race-corrected.txt' and not swapped['done']:
+                swapped['done'] = True
+                self.unlink()
+                self.symlink_to(external)
+            return result
+
+        monkeypatch.setattr(Path, 'resolve', racing_resolve)
+
+        with pytest.raises(OSError):
+            _write_within(leaf, scan, 'attacker payload')
+        assert swapped['done'] is True
+        assert external.read_text() == 'untouched'
+
     def test_batch_quiet_suppresses_output(self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
         f = tmp_path / 'Quiet-corrected.txt'
         f.write_text(

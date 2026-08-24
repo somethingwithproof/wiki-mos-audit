@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import difflib
 import json
+import os
 import sys
 import urllib.error
 import urllib.parse
@@ -127,20 +128,36 @@ def _audit_single(
     return report, wikitext
 
 
-def _resolved_within(path: Path, root: Path) -> Path | None:
-    """Rebuild path underneath root, or None when it does not belong there.
+def _write_within(path: Path, root: Path, text: str) -> bool:
+    """Write text to path under root, or return False without writing.
 
     A symlink placed in the scanned directory otherwise lets --fix write
-    outside the tree the operator pointed at. The target is reconstructed from
-    root rather than carried over from the caller, so nothing outside root can
-    reach the write.
+    outside the tree the operator pointed at. Validating the path and writing
+    it are two steps, so the leaf is opened relative to the scan root with
+    O_NOFOLLOW: swapping it for a symlink after the check still fails. The
+    scan is one level deep, so the leaf is the only component that can move.
     """
     safe_root = root.resolve()
     try:
         relative = path.resolve().relative_to(safe_root)
     except ValueError:
-        return None
-    return safe_root.joinpath(*relative.parts)
+        return False
+    if len(relative.parts) != 1:
+        return False
+
+    dir_fd = os.open(safe_root, os.O_RDONLY)
+    try:
+        fd = os.open(
+            relative.parts[0],
+            os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW,
+            0o644,
+            dir_fd=dir_fd,
+        )
+    finally:
+        os.close(dir_fd)
+    with os.fdopen(fd, 'w', encoding='utf-8') as handle:
+        handle.write(text)
+    return True
 
 
 def _run_batch(args: argparse.Namespace, config: AuditConfig | None = None) -> int:
@@ -185,18 +202,17 @@ def _run_batch(args: argparse.Namespace, config: AuditConfig | None = None) -> i
         reports.append(report)
 
         if args.fix and fixed_wikitext != wikitext:
-            write_target = _resolved_within(filepath, scan_dir)
-            if write_target is None:
-                print(
-                    f'Warning: refusing to write {filepath.name} outside {args.dir}',
-                    file=sys.stderr,
-                )
-                continue
             try:
-                write_target.write_text(fixed_wikitext, encoding='utf-8')
+                written = _write_within(filepath, scan_dir, fixed_wikitext)
             except OSError as exc:
                 print(f'Warning: could not write fixes to {filepath.name}: {exc}', file=sys.stderr)
             else:
+                if not written:
+                    print(
+                        f'Warning: refusing to write {filepath.name} outside {args.dir}',
+                        file=sys.stderr,
+                    )
+                    continue
                 if args.verbose:
                     print(f'fixed: {filepath.name}', file=sys.stderr)
 
