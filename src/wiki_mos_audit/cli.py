@@ -145,7 +145,9 @@ def _write_within(path: Path, root: Path, text: str) -> bool:
     if len(relative.parts) != 1:
         return False
 
-    dir_fd = os.open(safe_root, os.O_RDONLY)
+    # O_DIRECTORY | O_NOFOLLOW: the root is already resolved, so it must still
+    # be a real directory here; a symlink swapped in after the check is refused.
+    dir_fd = os.open(safe_root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
     try:
         fd = os.open(
             relative.parts[0],

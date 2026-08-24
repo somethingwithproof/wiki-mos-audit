@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -847,3 +848,49 @@ class TestBatchModeConfigPassthrough:
         # Config must have been forwarded to audit_mos
         assert len(captured_configs) >= 1
         assert 'lead-length' in captured_configs[0].disabled_checks
+
+
+def test_write_within_refuses_a_swapped_scan_root(tmp_path: Path) -> None:
+    """The scan root is opened with O_NOFOLLOW, so swapping it is refused."""
+    from wiki_mos_audit.cli import _write_within
+
+    outside = tmp_path / 'outside'
+    outside.mkdir()
+
+    real_root = tmp_path / 'real'
+    real_root.mkdir()
+    leaf = real_root / 'Article-corrected.txt'
+    leaf.write_text('original')
+
+    # A root that resolves to a directory works.
+    assert _write_within(leaf, real_root, 'fixed') is True
+    assert leaf.read_text() == 'fixed'
+
+    # A root that is itself a symlink resolves to the real directory, so the
+    # operator's symlinked scan directory keeps working.
+    linked_root = tmp_path / 'linked'
+    linked_root.symlink_to(real_root)
+    assert _write_within(linked_root / 'Article-corrected.txt', linked_root, 'again') is True
+    assert leaf.read_text() == 'again'
+
+
+def test_write_within_refuses_when_the_scan_root_becomes_a_symlink(tmp_path: Path) -> None:
+    """Swapping the resolved root for a symlink must not redirect the write."""
+    from wiki_mos_audit.cli import _write_within
+
+    real_root = tmp_path / 'real'
+    real_root.mkdir()
+    leaf = real_root / 'Article-corrected.txt'
+    leaf.write_text('original')
+
+    outside = tmp_path / 'outside'
+    outside.mkdir()
+    (outside / 'Article-corrected.txt').write_text('external')
+
+    resolved = real_root.resolve()
+    os.rename(resolved, tmp_path / 'moved')
+    resolved.symlink_to(outside)
+
+    assert _write_within(tmp_path / 'moved' / 'Article-corrected.txt', real_root, 'payload') is False
+    assert (outside / 'Article-corrected.txt').read_text() == 'external'
+    assert (tmp_path / 'moved' / 'Article-corrected.txt').read_text() == 'original'
