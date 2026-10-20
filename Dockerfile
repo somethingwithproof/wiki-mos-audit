@@ -1,4 +1,4 @@
-FROM python:3.12-slim AS base
+FROM python:3.14-slim AS base
 WORKDIR /app
 RUN pip install --no-cache-dir --only-binary :all: uv==0.10.6
 ENV PATH="/app/.venv/bin:$PATH" PYTHONPATH=/app/src
