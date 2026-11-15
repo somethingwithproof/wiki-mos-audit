@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Thomas Vincent <thomasvincent@gmail.com>
+# SPDX-License-Identifier: MIT
+
 FROM python:3.12-slim AS base
 WORKDIR /app
 RUN pip install --no-cache-dir --only-binary :all: uv==0.10.6

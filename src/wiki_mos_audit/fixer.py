@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Thomas Vincent <thomasvincent@gmail.com>
+# SPDX-License-Identifier: MIT
+
 """Auto-fix module for wiki-mos-audit. Handles safe, mechanical corrections only."""
 from __future__ import annotations
 

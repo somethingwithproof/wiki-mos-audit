@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Thomas Vincent <thomasvincent@gmail.com>
+# SPDX-License-Identifier: MIT
+
 """Shared pytest fixtures for wiki-mos-audit tests."""
 from __future__ import annotations
 
