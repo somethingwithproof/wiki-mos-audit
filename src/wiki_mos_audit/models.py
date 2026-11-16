@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Thomas Vincent <thomasvincent@gmail.com>
+# SPDX-License-Identifier: MIT
+
 """Data models, constants, and compiled regexes for wiki-mos-audit."""
 from __future__ import annotations
 
