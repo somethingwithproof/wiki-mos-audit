@@ -6,9 +6,9 @@
 
 **Languages:** **English** · [Deutsch](docs/i18n/de/README.md) · [Español](docs/i18n/es/README.md) · [Français](docs/i18n/fr/README.md) · [Italiano](docs/i18n/it/README.md) · [Português (BR)](docs/i18n/pt-BR/README.md) · [Nederlands](docs/i18n/nl/README.md) · [Русский](docs/i18n/ru/README.md) · [Українська](docs/i18n/uk/README.md) · [日本語](docs/i18n/ja/README.md) · [한국어](docs/i18n/ko/README.md) · [简体中文](docs/i18n/zh-CN/README.md) · [繁體中文](docs/i18n/zh-TW/README.md) · [العربية](docs/i18n/ar/README.md) · [हिन्दी](docs/i18n/hi/README.md) · [Polski](docs/i18n/pl/README.md) · [Türkçe](docs/i18n/tr/README.md) · [Svenska](docs/i18n/sv/README.md) · [Tiếng Việt](docs/i18n/vi/README.md) · [Bahasa Indonesia](docs/i18n/id/README.md)
 
-<details><summary>More languages (25 African &amp; Asian locales)</summary>
+<details><summary>More languages (28 locales)</summary>
 
-[Afrikaans](docs/i18n/af-ZA/README.md) · [አማርኛ](docs/i18n/am-ET/README.md) · [العربية (مصر)](docs/i18n/ar-EG/README.md) · [العربية (المغرب)](docs/i18n/ar-MA/README.md) · [বাংলা](docs/i18n/bn/README.md) · [فارسی](docs/i18n/fa/README.md) · [Filipino](docs/i18n/fil/README.md) · [Français (Maroc)](docs/i18n/fr-MA/README.md) · [Français (Sénégal)](docs/i18n/fr-SN/README.md) · [Hausa](docs/i18n/ha-NG/README.md) · [עברית](docs/i18n/he/README.md) · [Igbo](docs/i18n/ig-NG/README.md) · [Malagasy](docs/i18n/mg-MG/README.md) · [मराठी](docs/i18n/mr/README.md) · [Bahasa Melayu](docs/i18n/ms/README.md) · [Kinyarwanda](docs/i18n/rw-RW/README.md) · [Soomaali](docs/i18n/so-SO/README.md) · [Kiswahili](docs/i18n/sw-KE/README.md) · [தமிழ்](docs/i18n/ta/README.md) · [తెలుగు](docs/i18n/te/README.md) · [ไทย](docs/i18n/th/README.md) · [اردو](docs/i18n/ur/README.md) · [isiXhosa](docs/i18n/xh-ZA/README.md) · [Yorùbá](docs/i18n/yo-NG/README.md) · [isiZulu](docs/i18n/zu-ZA/README.md)
+[Afrikaans](docs/i18n/af-ZA/README.md) · [አማርኛ](docs/i18n/am-ET/README.md) · [العربية (مصر)](docs/i18n/ar-EG/README.md) · [العربية (المغرب)](docs/i18n/ar-MA/README.md) · [বাংলা](docs/i18n/bn/README.md) · [Bosanski](docs/i18n/bs/README.md) · [فارسی](docs/i18n/fa/README.md) · [Filipino](docs/i18n/fil/README.md) · [Français (Maroc)](docs/i18n/fr-MA/README.md) · [Français (Sénégal)](docs/i18n/fr-SN/README.md) · [Hausa](docs/i18n/ha-NG/README.md) · [עברית](docs/i18n/he/README.md) · [Hrvatski](docs/i18n/hr/README.md) · [Igbo](docs/i18n/ig-NG/README.md) · [Malagasy](docs/i18n/mg-MG/README.md) · [मराठी](docs/i18n/mr/README.md) · [Bahasa Melayu](docs/i18n/ms/README.md) · [Kinyarwanda](docs/i18n/rw-RW/README.md) · [Soomaali](docs/i18n/so-SO/README.md) · [Српски](docs/i18n/sr/README.md) · [Kiswahili](docs/i18n/sw-KE/README.md) · [தமிழ்](docs/i18n/ta/README.md) · [తెలుగు](docs/i18n/te/README.md) · [ไทย](docs/i18n/th/README.md) · [اردو](docs/i18n/ur/README.md) · [isiXhosa](docs/i18n/xh-ZA/README.md) · [Yorùbá](docs/i18n/yo-NG/README.md) · [isiZulu](docs/i18n/zu-ZA/README.md)
 
 </details>
 
@@ -101,7 +101,7 @@ wiki-mos-audit "https://en.wikipedia.org/wiki/Gettysburg_Address"
 Audit a local wikitext file:
 
 ```
-wiki-mos-audit --wikitext-file article_corrected.txt
+wiki-mos-audit "Article" --wikitext-file article_corrected.txt
 ```
 
 Batch audit a directory of wikitext files:
@@ -113,7 +113,7 @@ wiki-mos-audit --dir ./articles/
 Skip API checks (offline mode):
 
 ```
-wiki-mos-audit --wikitext-file article.txt --offline
+wiki-mos-audit "Article" --wikitext-file article.txt --offline
 ```
 
 ### Output formats
@@ -140,13 +140,13 @@ wiki-mos-audit "Article" --check-backlinks  # find articles that mention but don
 Safe mechanical fixes (whitespace, formatting) can be applied automatically:
 
 ```
-wiki-mos-audit --wikitext-file article.txt --fix --output-wikitext-file article_fixed.txt
+wiki-mos-audit "Article" --wikitext-file article.txt --fix --output-wikitext-file article_fixed.txt
 ```
 
-Preview without writing:
+Preview fix descriptions without writing:
 
 ```
-wiki-mos-audit --wikitext-file article.txt --fix --dry-run
+wiki-mos-audit "Article" --wikitext-file article.txt --fix --dry-run --verbose
 ```
 
 ### Diff mode
@@ -154,7 +154,7 @@ wiki-mos-audit --wikitext-file article.txt --fix --dry-run
 Compare local wikitext against the live version:
 
 ```
-wiki-mos-audit --wikitext-file article_corrected.txt --diff
+wiki-mos-audit "Article" --wikitext-file article_corrected.txt --diff
 ```
 
 ### Configuration
@@ -162,8 +162,11 @@ wiki-mos-audit --wikitext-file article_corrected.txt --diff
 Create a `.wiki-mos-audit.toml` file to adjust thresholds or disable specific checks:
 
 ```toml
+[audit]
 min_severity = "low"
 disabled_checks = ["mos-aviation-style"]
+
+[thresholds]
 max_lead_words = 300
 short_section_words = 40
 overlink_threshold = 4
@@ -177,7 +180,7 @@ wiki-mos-audit "Article" --config .wiki-mos-audit.toml
 
 ### Localization
 
-CLI help, diagnostics, and text/HTML report chrome support 45 locales (`en`, `de`, `es`, `fr`, `it`, `pt-BR`, `nl`, `ru`, `uk`, `ja`, `ko`, `zh-CN`, `zh-TW`, `ar`, `hi`, `pl`, `tr`, `sv`, `vi`, `id`, `af-ZA`, `am-ET`, `ar-EG`, `ar-MA`, `fr-MA`, `fr-SN`, `ha-NG`, `ig-NG`, `mg-MG`, `rw-RW`, `so-SO`, `sw-KE`, `xh-ZA`, `yo-NG`, `zu-ZA`, `bn`, `fa`, `he`, `mr`, `ta`, `te`, `th`, `ur`, `ms`, `fil`) with zero extra dependencies. Resolution checks `--lang` (distinct from `--language`, which selects the Wikipedia edition), then `LC_ALL`, `LC_MESSAGES`, and `LANG`, falling back to `en`. JSON output keys and wikitext templates remain unchanged.
+CLI help, diagnostics, and text/HTML report chrome support 48 locales (`en`, `de`, `es`, `fr`, `it`, `pt-BR`, `nl`, `ru`, `uk`, `ja`, `ko`, `zh-CN`, `zh-TW`, `ar`, `hi`, `pl`, `tr`, `sv`, `vi`, `id`, `af-ZA`, `am-ET`, `ar-EG`, `ar-MA`, `fr-MA`, `fr-SN`, `ha-NG`, `ig-NG`, `mg-MG`, `rw-RW`, `so-SO`, `sw-KE`, `xh-ZA`, `yo-NG`, `zu-ZA`, `bn`, `fa`, `he`, `mr`, `ta`, `te`, `th`, `ur`, `ms`, `fil`, `bs`, `hr`, `sr`) with zero extra dependencies. Resolution checks `--lang` (distinct from `--language`, which selects the Wikipedia edition), then `LC_ALL`, `LC_MESSAGES`, and `LANG`, falling back to `en`. JSON output keys and wikitext templates remain unchanged.
 
 ```
 wiki-mos-audit "Article" --lang de --wikitext-file article.txt
