@@ -167,6 +167,15 @@ Pass it explicitly:
 wiki-mos-audit "Article" --config .wiki-mos-audit.toml
 ```
 
+### Localization
+
+CLI help, diagnostics, and text/HTML report chrome support 20 locales (`en`, `de`, `es`, `fr`, `it`, `pt-BR`, `nl`, `ru`, `uk`, `ja`, `ko`, `zh-CN`, `zh-TW`, `ar`, `hi`, `pl`, `tr`, `sv`, `vi`, `id`) with zero extra dependencies. Resolution checks `--lang` (distinct from `--language`, which selects the Wikipedia edition), then `LC_ALL`, `LC_MESSAGES`, and `LANG`, falling back to `en`. JSON output keys and wikitext templates remain unchanged.
+
+```
+wiki-mos-audit "Article" --lang de --wikitext-file article.txt
+LANG=fr_FR.UTF-8 wiki-mos-audit --help
+```
+
 ## Python API
 
 ```python

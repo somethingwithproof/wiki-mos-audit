@@ -22,6 +22,7 @@ from wiki_mos_audit.formatter import (
     format_json_report,
     format_text_report,
 )
+from wiki_mos_audit.i18n import set_locale, t
 from wiki_mos_audit.maintenance import (
     apply_maintenance_tags,
     parse_maintenance_tag_args,
@@ -41,7 +42,7 @@ def title_from_target(target: str) -> str:
             query = urllib.parse.parse_qs(parsed.query)
             title = query.get('title', [''])[0]
         if not title:
-            raise ValueError(f'Could not derive title from URL: {target}')
+            raise ValueError(t('error.derive_title', target=target))
         return urllib.parse.unquote(title).replace('_', ' ')
 
     return target.replace('_', ' ')
@@ -57,47 +58,62 @@ def title_from_filename(path: Path) -> str:
     return name.replace('_', ' ')
 
 
+def _extract_lang(argv: list[str] | None) -> str | None:
+    """Read --lang before argparse runs so --help uses the requested locale."""
+    raw = sys.argv[1:] if argv is None else argv
+    for idx, arg in enumerate(raw):
+        if arg == '--lang' and idx + 1 < len(raw):
+            return raw[idx + 1]
+        if arg.startswith('--lang='):
+            return arg.split('=', 1)[1]
+    return None
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description='First-pass MOS auditor for Wikipedia pages.')
-    parser.add_argument('target', nargs='?', help='Wikipedia URL or article title.')
+    set_locale(_extract_lang(argv))
+    parser = argparse.ArgumentParser(description=t('cli.description'))
+    parser.add_argument('target', nargs='?', help=t('cli.target_help'))
     parser.add_argument('--version', action='version', version=f'%(prog)s {VERSION}')
-    parser.add_argument('--language', default=None, help='Wikipedia language code (default: en).')
-    parser.add_argument('--wikitext-file', help='Read wikitext from local file instead of API.')
-    parser.add_argument('--dir', help='Scan all *-corrected.txt and *.wiki files in a directory.')
+    parser.add_argument('--language', default=None, help=t('cli.language_help'))
+    parser.add_argument('--lang', dest='ui_lang', default=None, help=t('cli.lang_help'))
+    parser.add_argument('--wikitext-file', help=t('cli.wikitext_file_help'))
+    parser.add_argument('--dir', help=t('cli.dir_help'))
     parser.add_argument(
         '--format', choices=('text', 'json', 'html'), default=None,
-        help='Output format (default: text).',
+        help=t('cli.format_help'),
     )
-    parser.add_argument('--json', action='store_true', help='Output JSON (shorthand for --format json).')
-    parser.add_argument('--diff', action='store_true', help='Show diff between live and local wikitext.')
-    parser.add_argument('--fix', action='store_true', help='Auto-fix safe mechanical issues.')
+    parser.add_argument('--json', action='store_true', help=t('cli.json_help'))
+    parser.add_argument('--diff', action='store_true', help=t('cli.diff_help'))
+    parser.add_argument('--fix', action='store_true', help=t('cli.fix_help'))
     parser.add_argument(
         '--add-maintenance-tags', action='store_true',
-        help='Insert suggested maintenance templates from detected issues.',
+        help=t('cli.add_maintenance_tags_help'),
     )
     parser.add_argument(
         '--maintenance-tag', action='append',
-        help='Additional maintenance tag(s); comma-separated or repeatable.',
+        help=t('cli.maintenance_tag_help'),
     )
-    parser.add_argument('--output-wikitext-file', help='Write updated wikitext to this file.')
-    parser.add_argument('--dry-run', action='store_true', help='Preview changes without writing.')
+    parser.add_argument('--output-wikitext-file', help=t('cli.output_wikitext_file_help'))
+    parser.add_argument('--dry-run', action='store_true', help=t('cli.dry_run_help'))
     parser.add_argument(
         '--skip-api-checks', '--offline', dest='offline', action='store_true',
-        help='Skip red-link and category existence checks.',
+        help=t('cli.offline_help'),
     )
-    parser.add_argument('--check-urls', action='store_true', help='HEAD-check cited URLs for dead links (slow).')
-    parser.add_argument('--check-orphan', action='store_true', help='Check if article has incoming wikilinks.')
+    parser.add_argument('--check-urls', action='store_true', help=t('cli.check_urls_help'))
+    parser.add_argument('--check-orphan', action='store_true', help=t('cli.check_orphan_help'))
     parser.add_argument(
         '--check-backlinks', action='store_true',
-        help='Find articles that mention but do not link here.',
+        help=t('cli.check_backlinks_help'),
     )
-    parser.add_argument('--config', help='Path to .wiki-mos-audit.toml config file.')
+    parser.add_argument('--config', help=t('cli.config_help'))
 
     verbosity = parser.add_mutually_exclusive_group()
-    verbosity.add_argument('--verbose', '-v', action='store_true', help='Print which checks are running to stderr.')
-    verbosity.add_argument('--quiet', '-q', action='store_true', help='Suppress non-error output; exit code only.')
+    verbosity.add_argument('--verbose', '-v', action='store_true', help=t('cli.verbose_help'))
+    verbosity.add_argument('--quiet', '-q', action='store_true', help=t('cli.quiet_help'))
 
-    return parser.parse_args(argv)
+    parsed = parser.parse_args(argv)
+    set_locale(parsed.ui_lang)
+    return parsed
 
 
 def _audit_single(
@@ -169,7 +185,7 @@ def _run_batch(args: argparse.Namespace, config: AuditConfig | None = None) -> i
     """Scan a directory of wikitext files."""
     scan_dir = Path(args.dir)
     if not scan_dir.is_dir():
-        print(f'Error: {args.dir} is not a directory.', file=sys.stderr)
+        print(t('error.not_a_directory', path=args.dir), file=sys.stderr)
         return 1
 
     files = sorted(
@@ -178,7 +194,7 @@ def _run_batch(args: argparse.Namespace, config: AuditConfig | None = None) -> i
         + list(scan_dir.glob('*_corrected.txt'))
     )
     if not files:
-        print(f'No *-corrected.txt or *.wiki files found in {args.dir}', file=sys.stderr)
+        print(t('error.no_files_found', path=args.dir), file=sys.stderr)
         return 1
 
     reports: list[AuditReport] = []
@@ -188,17 +204,17 @@ def _run_batch(args: argparse.Namespace, config: AuditConfig | None = None) -> i
             api_client = WikipediaApiClient(language=args.language)
         except (ValueError, OSError) as exc:
             if args.verbose:
-                print(f'note: API checks disabled in batch mode: {exc}', file=sys.stderr)
+                print(t('note.api_disabled_batch', error=exc), file=sys.stderr)
 
     processed_files = 0
     for filepath in files:
         try:
             wikitext = filepath.read_text(encoding='utf-8')
         except UnicodeDecodeError as exc:
-            print(f'Warning: skipping {filepath.name} (not UTF-8): {exc}', file=sys.stderr)
+            print(t('warn.skipping_not_utf8', name=filepath.name, error=exc), file=sys.stderr)
             continue
         except OSError as exc:
-            print(f'Warning: skipping {filepath.name}: {exc}', file=sys.stderr)
+            print(t('warn.skipping_file', name=filepath.name, error=exc), file=sys.stderr)
             continue
 
         processed_files += 1
@@ -210,11 +226,11 @@ def _run_batch(args: argparse.Namespace, config: AuditConfig | None = None) -> i
             try:
                 written = _write_within(filepath, scan_dir, fixed_wikitext)
             except OSError as exc:
-                print(f'Warning: could not write fixes to {filepath.name}: {exc}', file=sys.stderr)
+                print(t('warn.could_not_write_fixes', name=filepath.name, error=exc), file=sys.stderr)
             else:
                 if not written:
                     print(
-                        f'Warning: refusing to write {filepath.name} outside {args.dir}',
+                        t('warn.refusing_write_outside', name=filepath.name, dir=args.dir),
                         file=sys.stderr,
                     )
                     continue
@@ -222,7 +238,7 @@ def _run_batch(args: argparse.Namespace, config: AuditConfig | None = None) -> i
                     print(f'fixed: {filepath.name}', file=sys.stderr)
 
     if processed_files == 0:
-        print(f'Error: no readable UTF-8 wikitext files found in {args.dir}', file=sys.stderr)
+        print(t('error.no_readable_utf8', path=args.dir), file=sys.stderr)
         return 1
 
     if args.quiet:
@@ -253,13 +269,13 @@ def main(argv: list[str] | None = None) -> int:
         return _run_batch(args, config=config)
 
     if args.target is None:
-        print('Error: target is required (or use --dir for batch mode).', file=sys.stderr)
+        print(t('error.target_required'), file=sys.stderr)
         return 2
 
     try:
         title = title_from_target(args.target)
     except ValueError as exc:
-        print(f'Error: {exc}', file=sys.stderr)
+        print(t('error.generic', error=exc), file=sys.stderr)
         return 1
 
     api_client: WikipediaApiClient | None = None
@@ -267,12 +283,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.wikitext_file:
             wikitext = Path(args.wikitext_file).read_text(encoding='utf-8')
             if args.verbose:
-                print('note: --wikitext-file supplied; reading from local file', file=sys.stderr)
+                print(t('note.reading_local_file'), file=sys.stderr)
         else:
             api_client = WikipediaApiClient(language=args.language)
             wikitext = api_client.fetch_wikitext(title=title)
     except (ValueError, urllib.error.URLError, OSError, json.JSONDecodeError) as exc:
-        print(f'Error: {exc}', file=sys.stderr)
+        print(t('error.generic', error=exc), file=sys.stderr)
         return 1
 
     # create API client for red-link/disambiguation checks even with --wikitext-file
@@ -281,7 +297,7 @@ def main(argv: list[str] | None = None) -> int:
             api_client = WikipediaApiClient(language=args.language)
         except (ValueError, OSError):
             if args.verbose:
-                print('note: could not create API client; skipping API-based checks', file=sys.stderr)
+                print(t('note.skipping_api_checks'), file=sys.stderr)
 
     # diff mode: compare local file against live
     if args.diff and args.wikitext_file:
@@ -298,12 +314,12 @@ def main(argv: list[str] | None = None) -> int:
             if diff_text:
                 print(diff_text)
             else:
-                print('No differences between live and local wikitext.')
+                print(t('status.no_diff'))
         except Exception as exc:
-            print(f'Warning: diff unavailable: {exc}', file=sys.stderr)
+            print(t('warn.diff_unavailable', error=exc), file=sys.stderr)
 
     if args.fix and not args.output_wikitext_file:
-        print('Warning: --fix without --output-wikitext-file; fixes will not be saved.', file=sys.stderr)
+        print(t('warn.fix_without_output'), file=sys.stderr)
 
     report, wikitext = _audit_single(title, wikitext, args, api_client, config=config)
 
@@ -311,7 +327,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         manual_tags = parse_maintenance_tag_args(args.maintenance_tag)
     except ValueError as exc:
-        print(f'Error: {exc}', file=sys.stderr)
+        print(t('error.generic', error=exc), file=sys.stderr)
         return 1
 
     tag_requests = auto_tags + manual_tags
@@ -323,7 +339,7 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     if tag_requests and not args.dry_run and not args.output_wikitext_file:
-        print('Error: --output-wikitext-file is required when adding tags without --dry-run.', file=sys.stderr)
+        print(t('error.output_required_for_tags'), file=sys.stderr)
         return 2
 
     if tag_requests and not args.dry_run and args.output_wikitext_file:
@@ -358,11 +374,11 @@ def main(argv: list[str] | None = None) -> int:
     else:
         text_report = format_text_report(report)
         if tag_requests:
-            mode_text = 'would add' if args.dry_run else 'added'
-            tag_text = ', '.join(added_tags) if added_tags else 'none'
-            text_report = f'{text_report}\n\nMaintenance tags {mode_text}: {tag_text}'
+            tag_text = ', '.join(added_tags) if added_tags else t('status.none')
+            tag_key = 'status.maintenance_tags_would_add' if args.dry_run else 'status.maintenance_tags_added'
+            text_report = f'{text_report}\n\n{t(tag_key, tags=tag_text)}'
             if args.output_wikitext_file and not args.dry_run:
-                text_report = f'{text_report}\nWikitext written to: {args.output_wikitext_file}'
+                text_report = f'{text_report}\n{t("status.wikitext_written", path=args.output_wikitext_file)}'
 
         print(text_report)
 
