@@ -101,7 +101,7 @@ wiki-mos-audit "https://en.wikipedia.org/wiki/Gettysburg_Address"
 Analiziraj lokalnu datoteku vikiteksta:
 
 ```
-wiki-mos-audit --wikitext-file article_corrected.txt
+wiki-mos-audit "Article" --wikitext-file article_corrected.txt
 ```
 
 Paketna analiza direktorija s datotekama vikiteksta:
@@ -113,7 +113,7 @@ wiki-mos-audit --dir ./articles/
 Preskoči API provjere (vanmrežni način rada):
 
 ```
-wiki-mos-audit --wikitext-file article.txt --offline
+wiki-mos-audit "Article" --wikitext-file article.txt --offline
 ```
 
 ### Formati izlaza
@@ -140,13 +140,13 @@ wiki-mos-audit "Article" --check-backlinks  # find articles that mention but don
 Sigurne mehaničke ispravke (razmaci, formatiranje) mogu se primijeniti automatski:
 
 ```
-wiki-mos-audit --wikitext-file article.txt --fix --output-wikitext-file article_fixed.txt
+wiki-mos-audit "Article" --wikitext-file article.txt --fix --output-wikitext-file article_fixed.txt
 ```
 
-Pregled bez upisivanja u datoteku:
+Pregled opisa ispravki bez upisivanja u datoteku:
 
 ```
-wiki-mos-audit --wikitext-file article.txt --fix --dry-run
+wiki-mos-audit "Article" --wikitext-file article.txt --fix --dry-run --verbose
 ```
 
 ### Način poređenja (Diff)
@@ -154,7 +154,7 @@ wiki-mos-audit --wikitext-file article.txt --fix --dry-run
 Uporedi lokalni vikitekst s objavljenom verzijom:
 
 ```
-wiki-mos-audit --wikitext-file article_corrected.txt --diff
+wiki-mos-audit "Article" --wikitext-file article_corrected.txt --diff
 ```
 
 ### Postavke i konfiguracija
@@ -162,8 +162,11 @@ wiki-mos-audit --wikitext-file article_corrected.txt --diff
 Kreirajte datoteku `.wiki-mos-audit.toml` da prilagodite pragove ili onemogućite pojedinačne provjere:
 
 ```toml
+[audit]
 min_severity = "low"
 disabled_checks = ["mos-aviation-style"]
+
+[thresholds]
 max_lead_words = 300
 short_section_words = 40
 overlink_threshold = 4

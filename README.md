@@ -101,7 +101,7 @@ wiki-mos-audit "https://en.wikipedia.org/wiki/Gettysburg_Address"
 Audit a local wikitext file:
 
 ```
-wiki-mos-audit --wikitext-file article_corrected.txt
+wiki-mos-audit "Article" --wikitext-file article_corrected.txt
 ```
 
 Batch audit a directory of wikitext files:
@@ -113,7 +113,7 @@ wiki-mos-audit --dir ./articles/
 Skip API checks (offline mode):
 
 ```
-wiki-mos-audit --wikitext-file article.txt --offline
+wiki-mos-audit "Article" --wikitext-file article.txt --offline
 ```
 
 ### Output formats
@@ -140,13 +140,13 @@ wiki-mos-audit "Article" --check-backlinks  # find articles that mention but don
 Safe mechanical fixes (whitespace, formatting) can be applied automatically:
 
 ```
-wiki-mos-audit --wikitext-file article.txt --fix --output-wikitext-file article_fixed.txt
+wiki-mos-audit "Article" --wikitext-file article.txt --fix --output-wikitext-file article_fixed.txt
 ```
 
-Preview without writing:
+Preview fix descriptions without writing:
 
 ```
-wiki-mos-audit --wikitext-file article.txt --fix --dry-run
+wiki-mos-audit "Article" --wikitext-file article.txt --fix --dry-run --verbose
 ```
 
 ### Diff mode
@@ -154,7 +154,7 @@ wiki-mos-audit --wikitext-file article.txt --fix --dry-run
 Compare local wikitext against the live version:
 
 ```
-wiki-mos-audit --wikitext-file article_corrected.txt --diff
+wiki-mos-audit "Article" --wikitext-file article_corrected.txt --diff
 ```
 
 ### Configuration
@@ -162,8 +162,11 @@ wiki-mos-audit --wikitext-file article_corrected.txt --diff
 Create a `.wiki-mos-audit.toml` file to adjust thresholds or disable specific checks:
 
 ```toml
+[audit]
 min_severity = "low"
 disabled_checks = ["mos-aviation-style"]
+
+[thresholds]
 max_lead_words = 300
 short_section_words = 40
 overlink_threshold = 4

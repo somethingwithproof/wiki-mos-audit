@@ -101,7 +101,7 @@ wiki-mos-audit "https://en.wikipedia.org/wiki/Gettysburg_Address"
 Ревизија локалне датотеке викитекста:
 
 ```
-wiki-mos-audit --wikitext-file article_corrected.txt
+wiki-mos-audit "Article" --wikitext-file article_corrected.txt
 ```
 
 Групна ревизија директоријума са датотекама викитекста:
@@ -113,7 +113,7 @@ wiki-mos-audit --dir ./articles/
 Прескакање API провера (ванмрежни режим):
 
 ```
-wiki-mos-audit --wikitext-file article.txt --offline
+wiki-mos-audit "Article" --wikitext-file article.txt --offline
 ```
 
 ### Формати излаза
@@ -140,13 +140,13 @@ wiki-mos-audit "Article" --check-backlinks  # find articles that mention but don
 Безбедне механичке исправке (размаци, форматирање) могу се применити аутоматски:
 
 ```
-wiki-mos-audit --wikitext-file article.txt --fix --output-wikitext-file article_fixed.txt
+wiki-mos-audit "Article" --wikitext-file article.txt --fix --output-wikitext-file article_fixed.txt
 ```
 
-Преглед без уписивања у датотеку:
+Преглед описа исправки без уписивања у датотеку:
 
 ```
-wiki-mos-audit --wikitext-file article.txt --fix --dry-run
+wiki-mos-audit "Article" --wikitext-file article.txt --fix --dry-run --verbose
 ```
 
 ### Режим поређења (Diff)
@@ -154,7 +154,7 @@ wiki-mos-audit --wikitext-file article.txt --fix --dry-run
 Упоређивање локалног викитекста са објављеном верзијом:
 
 ```
-wiki-mos-audit --wikitext-file article_corrected.txt --diff
+wiki-mos-audit "Article" --wikitext-file article_corrected.txt --diff
 ```
 
 ### Подешавања
@@ -162,8 +162,11 @@ wiki-mos-audit --wikitext-file article_corrected.txt --diff
 Направите датотеку `.wiki-mos-audit.toml` да бисте прилагодили прагове или онемогућили појединачне провере:
 
 ```toml
+[audit]
 min_severity = "low"
 disabled_checks = ["mos-aviation-style"]
+
+[thresholds]
 max_lead_words = 300
 short_section_words = 40
 overlink_threshold = 4
