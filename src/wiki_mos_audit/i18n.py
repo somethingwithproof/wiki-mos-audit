@@ -12,30 +12,71 @@ from importlib import resources
 DEFAULT_LOCALE = 'en'
 
 SUPPORTED_LOCALES: tuple[str, ...] = (
-    'en',
-    'de',
-    'es',
-    'fr',
-    'it',
-    'pt-BR',
-    'nl',
-    'ru',
-    'uk',
-    'ja',
-    'ko',
-    'zh-CN',
-    'zh-TW',
-    'ar',
-    'hi',
-    'pl',
-    'tr',
-    'sv',
-    'vi',
-    'id',
+    "en",
+    "de",
+    "es",
+    "fr",
+    "it",
+    "pt-BR",
+    "nl",
+    "ru",
+    "uk",
+    "ja",
+    "ko",
+    "zh-CN",
+    "zh-TW",
+    "ar",
+    "hi",
+    "pl",
+    "tr",
+    "sv",
+    "vi",
+    "id",
+    "af-ZA",
+    "am-ET",
+    "ar-EG",
+    "ar-MA",
+    "fr-MA",
+    "fr-SN",
+    "ha-NG",
+    "ig-NG",
+    "mg-MG",
+    "rw-RW",
+    "so-SO",
+    "sw-KE",
+    "xh-ZA",
+    "yo-NG",
+    "zu-ZA",
+    "bn",
+    "fa",
+    "he",
+    "mr",
+    "ta",
+    "te",
+    "th",
+    "ur",
+    "ms",
+    "fil",
 )
 
 _LOCALE_BY_LOWER: dict[str, str] = {loc.lower(): loc for loc in SUPPORTED_LOCALES}
-_ZH_TRADITIONAL_REGIONS = frozenset({'tw', 'hk', 'mo'})
+_PRIMARY_ALIASES: dict[str, str] = {
+    "af": "af-ZA",
+    "am": "am-ET",
+    "ha": "ha-NG",
+    "ig": "ig-NG",
+    "iw": "he",
+    "mg": "mg-MG",
+    "pt": "pt-BR",
+    "rw": "rw-RW",
+    "so": "so-SO",
+    "sw": "sw-KE",
+    "tl": "fil",
+    "xh": "xh-ZA",
+    "yo": "yo-NG",
+    "zu": "zu-ZA",
+}
+_ZH_TRADITIONAL_REGIONS = frozenset({"tw", "hk", "mo"})
 _active_locale: str | None = None
 
 
@@ -43,29 +84,33 @@ def normalize_locale(raw: str | None) -> str:
     """Resolve a POSIX or BCP 47 locale tag to a supported locale code."""
     if not raw:
         return DEFAULT_LOCALE
-    cleaned = raw.strip().split('.', 1)[0].split('@', 1)[0]
-    if not cleaned or cleaned.upper() in {'C', 'POSIX'}:
+    cleaned = raw.strip().split(".", 1)[0].split("@", 1)[0]
+    if not cleaned or cleaned.upper() in {"C", "POSIX"}:
         return DEFAULT_LOCALE
     base_parts: list[str] = []
-    for part in cleaned.replace('_', '-').lower().split('-'):
+    for part in cleaned.replace("_", "-").lower().split("-"):
         if len(part) == 1:
             break
         base_parts.append(part)
     if not base_parts:
         return DEFAULT_LOCALE
-    tag = '-'.join(base_parts)
+    tag = "-".join(base_parts)
     if tag in _LOCALE_BY_LOWER:
         return _LOCALE_BY_LOWER[tag]
     primary = base_parts[0]
-    if primary == 'zh':
+    if primary == "zh":
         subtags = set(base_parts[1:])
-        if 'hans' in subtags:
-            return 'zh-CN'
-        if 'hant' in subtags or subtags & _ZH_TRADITIONAL_REGIONS:
-            return 'zh-TW'
-        return 'zh-CN'
-    if primary == 'pt':
-        return 'pt-BR'
+        if "hans" in subtags:
+            return "zh-CN"
+        if "hant" in subtags or subtags & _ZH_TRADITIONAL_REGIONS:
+            return "zh-TW"
+        return "zh-CN"
+    if len(base_parts) >= 3:
+        lang_region = f"{primary}-{base_parts[2]}"
+        if lang_region in _LOCALE_BY_LOWER:
+            return _LOCALE_BY_LOWER[lang_region]
+    if primary in _PRIMARY_ALIASES:
+        return _PRIMARY_ALIASES[primary]
     return _LOCALE_BY_LOWER.get(primary, DEFAULT_LOCALE)
 
 
