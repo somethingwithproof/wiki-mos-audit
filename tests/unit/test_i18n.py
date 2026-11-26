@@ -58,11 +58,15 @@ def test_all_20_locales_load_with_key_and_placeholder_parity() -> None:
         ('de_DE.UTF-8', 'de'),
         ('zh_TW', 'zh-TW'),
         ('zh_HK.UTF-8', 'zh-TW'),
+        ('zh-TW-x-test', 'zh-TW'),
+        ('zh-HK-x-test', 'zh-TW'),
         ('zh-Hant-TW', 'zh-TW'),
+        ('zh-Hans-TW', 'zh-CN'),
         ('zh_CN.UTF-8', 'zh-CN'),
         ('zh', 'zh-CN'),
         ('pt_BR.UTF-8', 'pt-BR'),
         ('pt_PT', 'pt-BR'),
+        ('x-test', 'en'),
         ('xx_YY', 'en'),
     ],
 )
@@ -86,7 +90,7 @@ def test_env_precedence_and_override(monkeypatch: pytest.MonkeyPatch) -> None:
     assert get_locale() == 'de'
 
 
-def test_default_english_and_localized_reports() -> None:
+def test_default_english_and_localized_reports(capsys: pytest.CaptureFixture[str]) -> None:
     report = AuditReport(title='Test Article', score=100, issues=[])
     assert t('missing.key') == 'missing.key'
     assert 'No first-pass MOS issues detected.' in format_text_report(report)
@@ -98,3 +102,10 @@ def test_default_english_and_localized_reports() -> None:
     assert get_locale() == 'de'
     assert t('report.no_issues', locale='de') in format_text_report(report)
     assert '<html lang="de">' in format_html_report(report)
+
+    with pytest.raises(SystemExit) as exc:
+        parse_args(['--lang', 'en', '--lang', 'de', '--help'])
+    assert exc.value.code == 0
+    assert ' '.join(t('cli.description', locale='de').split()) in ' '.join(
+        capsys.readouterr().out.split()
+    )

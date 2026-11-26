@@ -59,14 +59,22 @@ def title_from_filename(path: Path) -> str:
 
 
 def _extract_lang(argv: list[str] | None) -> str | None:
-    """Read --lang before argparse runs so --help uses the requested locale."""
+    """Read the final --lang value before argparse runs so --help uses it."""
     raw = sys.argv[1:] if argv is None else argv
-    for idx, arg in enumerate(raw):
+    found: str | None = None
+    idx = 0
+    while idx < len(raw):
+        arg = raw[idx]
+        if arg == '--':
+            break
         if arg == '--lang' and idx + 1 < len(raw):
-            return raw[idx + 1]
+            found = raw[idx + 1]
+            idx += 2
+            continue
         if arg.startswith('--lang='):
-            return arg.split('=', 1)[1]
-    return None
+            found = arg.split('=', 1)[1]
+        idx += 1
+    return found
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
