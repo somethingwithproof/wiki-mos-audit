@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """Zero-dependency localization support for wiki-mos-audit."""
+
 from __future__ import annotations
 
 import json
@@ -9,7 +10,7 @@ import os
 from functools import lru_cache
 from importlib import resources
 
-DEFAULT_LOCALE = 'en'
+DEFAULT_LOCALE = "en"
 
 SUPPORTED_LOCALES: tuple[str, ...] = (
     "en",
@@ -57,6 +58,9 @@ SUPPORTED_LOCALES: tuple[str, ...] = (
     "ur",
     "ms",
     "fil",
+    "bs",
+    "hr",
+    "sr",
 )
 
 _LOCALE_BY_LOWER: dict[str, str] = {loc.lower(): loc for loc in SUPPORTED_LOCALES}
@@ -118,7 +122,7 @@ def detect_locale(explicit: str | None = None) -> str:
     """Detect locale using explicit > LC_ALL > LC_MESSAGES > LANG > en."""
     if explicit:
         return normalize_locale(explicit)
-    for var in ('LC_ALL', 'LC_MESSAGES', 'LANG'):
+    for var in ("LC_ALL", "LC_MESSAGES", "LANG"):
         value = os.environ.get(var)
         if value:
             return normalize_locale(value)
@@ -146,8 +150,8 @@ def get_locale() -> str:
 def load_catalog(locale: str) -> dict[str, str]:
     """Load the message catalog for a normalized locale."""
     resolved = normalize_locale(locale)
-    path = resources.files('wiki_mos_audit').joinpath('locales', f'{resolved}.json')
-    loaded = json.loads(path.read_text(encoding='utf-8'))
+    path = resources.files("wiki_mos_audit").joinpath("locales", f"{resolved}.json")
+    loaded = json.loads(path.read_text(encoding="utf-8"))
     return {str(k): str(v) for k, v in loaded.items()}
 
 
